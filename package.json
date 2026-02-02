@@ -1,0 +1,39 @@
+{
+    "name": "@jspreadsheet/server-mongodb",
+    "title": "Jspreadsheet Server MonboDB Adapter",
+    "description": "Connect your server with your mongodb server for data persistence.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/jspreadsheet/server-mongodb.git"
+    },
+    "author": {
+        "name": "Contact <contact@jspreadsheet.com>"
+    },
+    "keywords": [
+        "spreadsheet",
+        "online spreadsheet",
+        "jspreadsheet",
+        "jexcel",
+        "tables",
+        "table",
+        "excel",
+        "google spreadsheet",
+        "spreadsheet formulas",
+        "grid",
+        "grid-editor",
+        "data-table",
+        "data-grid",
+        "data-spreadsheet"
+    ],
+    "dependencies": {
+        "@aws-sdk/client-s3": "^3.598.0",
+        "jsonwebtoken": "^9.0.2",
+        "mongodb": "^6.7.0",
+        "uuid": "^8.3.2"
+    },
+    "main": "dist/index.js",
+    "version": "1.0.1",
+    "bugs": "https://github.com/jspreadsheet/pro/issues",
+    "homepage": "https://github.com/jspreadsheet/pro",
+    "download": "https://github.com/jspreadsheet/pro/archive/master.zip"
+}

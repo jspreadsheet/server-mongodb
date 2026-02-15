@@ -19,11 +19,13 @@ const moveArrayItems = function(array, from, to, quantity) {
         movedItems.push(null);
     }
 
-    while (array.length < to) {
+    const insertAt = from < to ? to - quantity + 1 : to;
+
+    while (array.length < insertAt) {
         array.push(null);
     }
 
-    array.splice(to, 0, ...movedItems);
+    array.splice(insertAt, 0, ...movedItems);
 }
 
 const dataIsMatrix = function(data) {

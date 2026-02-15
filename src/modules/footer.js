@@ -9,11 +9,22 @@ const setFooter = function(obj) {
 }
 
 const setFooterValue = function(obj) {
-    const [x, y, value] = obj.args;
+    let items = obj.args[0]
 
-    let changes = { $set: {} };
+    if (!Array.isArray(items)) {
+        items = [items]
+    }
 
-    changes.$set[`spreadsheet.worksheets.${obj.worksheetIndex}.footers.${y}.${x}`] = value;
+    const numOfItems = items.length
+
+    const set = {}
+
+    for (let i = 0; i < numOfItems; i++) {
+        const { x, y, value } = items[i];
+        set[`spreadsheet.worksheets.${obj.worksheetIndex}.footers.${y}.${x}`] = value;
+    }
+
+    const changes = { $set: set };
 
     return changes;
 }

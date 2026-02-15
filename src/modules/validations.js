@@ -1,9 +1,19 @@
 const setValidations = function(obj) {
     let newValue = obj.args[0];
-    let changes = { $set: {} };
+
+    const set = {}
+
     newValue.forEach((validation) => {
-        changes.$set[`spreadsheet.validations.${validation.index}`] = validation.value;
+        let key = `spreadsheet.validations.${validation.index}`;
+        if (typeof validation.value === 'string') {
+            key += '.range';
+        }
+
+        set[key] = validation.value;
     })
+
+    const changes = { $set: set };
+
     return changes;
 }
 

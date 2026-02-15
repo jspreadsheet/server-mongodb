@@ -122,7 +122,7 @@ const insertColumn = function(obj) {
 
                 currentData[rowIndex][columnName] = columnData[rowIndex];
             } else {
-                let cellValue = columnData && typeof columnData[rowIndex];
+                let cellValue = columnData && columnData[rowIndex];
 
                 if (!currentData[rowIndex]) {
                     if (typeof cellValue === 'undefined' || cellValue === '') {
@@ -287,7 +287,7 @@ const deleteColumn = function (obj) {
 
     const set = {
         [`${worksheetPath}.columns`]: currentColumns,
-        [`${worksheetPath}.minDimensions.1`]: worksheet.minDimensions[0] - length,
+        [`${worksheetPath}.minDimensions.0`]: worksheet.minDimensions[0] - length,
     };
 
     if (footers) {

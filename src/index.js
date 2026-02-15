@@ -1,7 +1,6 @@
 const uuid = require("uuid");
 const jwt = require('jsonwebtoken');
 const { MongoClient } = require('mongodb');
-const S3Abstraction = require('./utils/s3');
 
 const { setWidth, hideColumn, showColumn, insertColumn, moveColumn, deleteColumn } = require("./modules/column");
 const { setHeight, hideRow, showRow, moveRow, insertRow, deleteRow, setRowId } = require("./modules/row");
@@ -24,7 +23,6 @@ const { setColumnGroup, setRowGroup } = require("./modules/group");
 const { setDefinedNames } = require("./modules/definedNames");
 const { setConfig } = require("./modules/config");
 const { orderBy } = require('./modules/order');
-const { setName } = require('./modules/name');
 
 ;(function(global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
@@ -87,7 +85,6 @@ const { setName } = require('./modules/name');
         deleteRow,
         setRowId,
         orderBy,
-        setName,
     }
 
     const getUserId = function(query) {
@@ -170,12 +167,44 @@ const { setName } = require('./modules/name');
         }
     }
 
-    const change = async function(guid, obj, query, onerror) {
-        let result;
-        // Start the transaction
-        const session = await collection.client.startSession();
-        session.startTransaction();
+    // Queue per guid to ensure sequential execution
+    const queues = new Map();
 
+    const processQueue = async function(guid) {
+        const queue = queues.get(guid);
+        if (!queue || queue.processing || queue.items.length === 0) {
+            if (queue && !queue.processing && queue.items.length === 0) {
+                queues.delete(guid);
+            }
+            return;
+        }
+
+        queue.processing = true;
+        const item = queue.items.shift();
+
+        const result = await executeChange(guid, item.obj, item.query, item.onerror);
+
+        item.resolve();
+
+        if (result.error) {
+            // Clear remaining items from the queue
+            const remainingItems = queue.items.splice(0);
+            remainingItems.forEach(i => i.resolve());
+            // Sync the instance state to the database
+            const config = item.obj.instance.getConfig();
+            await replace(guid, config);
+        }
+
+        queue.processing = false;
+
+        if (queue.items.length === 0) {
+            queues.delete(guid);
+        } else {
+            processQueue(guid);
+        }
+    }
+
+    const executeChange = async function(guid, obj, query, onerror) {
         try {
             let method = obj.method;
             // Get updates
@@ -204,62 +233,43 @@ const { setName } = require('./modules/name');
                     }
                 }
             }
-            result = {
-                success: 1
-            };
+            return { success: 1 };
         } catch (error) {
             console.error(error);
-
-            result = {
-                error: 1,
-                message: error
-            };
 
             if (typeof(onerror) === 'function') {
                 onerror(error);
             }
-        }
 
-        if (result.error) {
-            await session.abortTransaction();
-        } else {
-            await session.commitTransaction();
+            return { error: 1, message: error };
         }
-        session.endSession();
+    }
+
+    const change = function(guid, obj, query, onerror) {
+        return new Promise((resolve) => {
+            if (!queues.has(guid)) {
+                queues.set(guid, { processing: false, items: [] });
+            }
+
+            const queue = queues.get(guid);
+            queue.items.push({ obj, query, onerror, resolve });
+            processQueue(guid);
+        });
     }
 
     const replace = async function(guid, config, query, onerror) {
-        let result;
-        // Start the transaction
-        const session = await collection.client.startSession();
-        session.startTransaction();
-
         try {
             await collection.updateOne({ _id: guid }, { $set: { spreadsheet: config } });
-
-            result = {
-                success: 1
-            };
+            return { success: 1 };
         } catch (error) {
             console.error(error);
-
-            result = {
-                error: 1,
-                message: error
-            };
 
             if (typeof(onerror) === 'function') {
                 onerror(error);
             }
-        }
 
-        if (result.error) {
-            await session.abortTransaction();
-        } else {
-            await session.commitTransaction();
+            return { error: 1, message: error };
         }
-
-        session.endSession();
     }
 
     const list = async function(query) {

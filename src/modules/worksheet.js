@@ -80,6 +80,11 @@ const moveWorksheet = function(obj) {
 const setWorksheetState = function(obj) {
     let [index, state] = obj.args;
     let changes = { $set: {} };
+
+    if (typeof state === 'boolean') {
+        state = state ? 'visible' : 'hidden';
+    }
+
     changes.$set[`spreadsheet.worksheets.${index}.worksheetState`] = state;
     return changes;
 }
